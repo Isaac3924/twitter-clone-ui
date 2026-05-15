@@ -19,12 +19,34 @@ export default function Login() {
 
     try{
       if (isLoginView) {
-        //Attempt to log them in
+        //Logging in an existing user
         await signInWithEmailAndPassword(auth, dummyEmail, password);
       } else {
-        //Attempt to create a new account
-        await createUserWithEmailAndPassword(auth, dummyEmail, password)
-        //NOTE: Add the connection her to sync this new user to Python backend
+        //Create new user in Firebase
+        const userCredential = await createUserWithEmailAndPassword(auth, dummyEmail, password)
+
+        //Grab new JWT token
+        const token = await userCredential.user.getIdToken();
+
+        //Send token and username to Python backend
+        //Ensure that the FastAPI server is running on port 8000
+        const response = await fetch("http://127.0.0.1:8000/api/v1/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            screen_name: username,
+            name: username
+          })
+        });
+
+        if (!response.ok) {
+          //If backend fails, deleting the Firebase user would be best, but for now we'll just throw an error.
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to create user in database");
+        }
       }
     } catch (err: any) {
       setError(err.message.replace("Firebase: ", ""));
