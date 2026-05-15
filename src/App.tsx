@@ -3,6 +3,7 @@ import { auth } from './firebase';
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";;
 import Login from './Login';
 import './App.css';
+import Dashboard from './Dashboard';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -31,17 +32,7 @@ function App() {
   }
 
   //If they are logged in, show them the app
-  return (
-    <div style={{ textAlign: "center", marginTop: "100px", fontFamily: "sans-serif" }}>
-      <h1>Welcome to the Feed!</h1>
-      <p>You are secretly logged in as: <strong>{currentUser.email}</strong></p>
-      <p>Your permanent VIP Firebase ID is: <strong>{currentUser.uid}</strong></p>
-
-      <button onClick={handleLogout} style={{ padding: "10px", marginTop: "20px", cursor: "pointer" }}>
-        Log Out
-      </button>
-    </div>
-  );
+  return <Dashboard user={currentUser} />;
 }
 
 export default App;
