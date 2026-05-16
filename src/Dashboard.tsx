@@ -1,6 +1,7 @@
 import { auth } from './firebase'
 import { signOut, type User } from 'firebase/auth';
 import ComposeTweet from './ComposeTweet';
+import Feed from './Feed';
 
 interface DashboardProps {
   user: User;
@@ -41,10 +42,8 @@ export default function Dashboard({ user }: DashboardProps) {
         {/* Compose Tweet Placeholder */}
         <ComposeTweet />
 
-        {/* Feed Placeholder */}
-        <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <p style={{ color: '#888', fontStyle: 'italic' }}>[ Tweet Feed will go here ]</p>
-        </div>
+        {/* Tweet Feed */}
+        <Feed />
       </div>
 
       {/* RIGHT SIDEBAR (Optional) */}
