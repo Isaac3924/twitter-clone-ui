@@ -22,7 +22,9 @@ export default function ComposeTweet() {
       const token = await user.getIdToken();
 
       //Send data to FastAPI backend
-      const response = await fetch('http://127.0.0.1:8000/api/v1/tweets', {
+      
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+      const response = await fetch(`${API_URL}/api/v1/tweets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
