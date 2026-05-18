@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { auth } from './firebase';
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";;
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import Login from './Login';
 import './App.css';
 import Dashboard from './Dashboard';
@@ -17,10 +17,6 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
-
-  const handleLogout = () => {
-    signOut(auth);
-  };
 
   if (loading) {
     return <div style={{ textAlign: "center", marginTop: "100px" }}>Loading App...</div>;
