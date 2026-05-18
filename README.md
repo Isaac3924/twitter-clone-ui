@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# Twitter Clone UI 🎨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive single-page application (SPA) built to serve as the user interface for the Twitter Clone ecosystemn. This frontend securely communicates with the [Twitter Clone API](https://github.com/Isaac3924/twitter_clone) to deliver a real-time, personalized social media feed.
 
-Currently, two official plugins are available:
+## 🛠 Tech Stack
+* **Framework:** React 18
+* **Build Tool:** Vite
+* **Language:** TypeScript
+* **Authentication:** Google Firebase Auth
+* **Deployment:** Firebase Hosting (via GitHub Actions)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Local Development Setup
 
-## React Compiler
+To run this frontend locally, you will need Node.js (v20 or v22) installed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Clone the repository
+```bash
+git clone https://github.com/Isaac3924/twitter-clone-ui.git
+cd twitter-clone-ui
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Install Dependencies
+```bash
+npm install
 ```
+
+### 3. Environment Variables
+To connect the Firebase authentication servers, create a `.env.local` file in the root directory and add your Firebase Web API key:
+```env
+VITE_FIREBASE_API_KEY="your_api_key_here"
+```
+*(Note: Do not commit this file to version control. It is ignored by default in Vite).*
+
+### 4. Run the development server
+```bash
+npm run dev
+```
+The application will launch at `http://localhost:5173`.
+
+*Important:* For full functionality (posting tweets, loading feeds), ensure the backend FastAPI server is concurrently running on `http://127.0.0.1:8000`.
