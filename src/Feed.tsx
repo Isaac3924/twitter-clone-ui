@@ -26,7 +26,7 @@ export default function Feed() {
 
         //Reaching out to the custom Feed endpoint using the user's Firebase UID
         const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-        const response = await fetch(`${API_URL}/api/v1/users/api/v1/users/${user.uid}/feed`, {
+        const response = await fetch(`${API_URL}/api/v1/users/${user.uid}/feed`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
