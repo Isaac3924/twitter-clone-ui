@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { auth } from "./firebase";
 
 export default function Profile() {
   // Grab the dynamic param from the URL (definred as :username in App.tsx)
   const { username } = useParams<{ username: string }>();
 
   const [profileInfo, setProfileInfo] = useState<any>(null);
-  const [userTweets, setUserTweets] = useState<any>([]);
+  const [userTweets, setUserTweets] = useState<any[]>([]);
   const [loading, setLoading] = useState<any>(true);
   const [error, setError] = useState<any>("");
 
@@ -48,7 +47,7 @@ export default function Profile() {
 
   return (
     <div style={{maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
-      
+
       {/* Top Navigation Bar */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
         <Link to="/" style={{ textDecoration: 'none', color: '#1DA1F2', fontWeight: 'bold', marginRight: '20px' }}>
