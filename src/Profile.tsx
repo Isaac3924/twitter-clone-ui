@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { auth } from './firebase';
 
 export default function Profile() {
   // Grab the dynamic param from the URL (definred as :username in App.tsx)
@@ -9,6 +10,9 @@ export default function Profile() {
   const [userTweets, setUserTweets] = useState<any[]>([]);
   const [loading, setLoading] = useState<any>(true);
   const [error, setError] = useState<any>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftBio, setDraftBio] = useState("");
+
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -45,6 +49,40 @@ export default function Profile() {
     }
   }, [username]);
 
+  const handleSaveBio = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("You must be logged in to edit your profile.");
+
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+      const token = await user.getIdToken();
+
+      const response = await fetch(`${API_URL}/api/v1/users/${username}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ bio: draftBio })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update bio on the server.");
+      }
+
+      const data = await response.json();
+
+      //Update the local UI instantly using the returned bio so refresh isn't needed
+      setProfileInfo({ ...profileInfo, bio: data.bio });
+
+      //Close the edit textbox
+      setIsEditing(false);
+
+    } catch (err: any) {
+      alert(err.message); //A quick native alert just for error handling.
+    }
+  }
+
   return (
     <div style={{maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
 
@@ -63,9 +101,45 @@ export default function Profile() {
         <>
           {/* User Info Header */}
           <div style={{ borderBottom: '1px solid #eee', paddingBottom: '20px', marginBottom: '20px' }}>
-            <h1 style={{ margin: '0 0 5px 0' }}>{profileInfo.name}</h1>
-            <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
-            {profileInfo.bio && <p style={{ marginTop: '10px' }}>{profileInfo.bio}</p>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h1 style={{ margin: '0 0 5px 0' }}>{profileInfo.name}</h1>
+                <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
+              </div>
+
+              {/* If the current user owns this profile, show the Edit button */}
+              {auth.currentUser?.uid === username && !isEditing && (
+                <button
+                  onClick={() => {
+                    setDraftBio(profileInfo.bio || "");
+                    setIsEditing(true);
+                  }}
+                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #1DA1F2', backgroundColor: 'white', color: '#1DA1F2', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
+
+            {/* The Bio Section: Swaps between text & an input box */}
+            {isEditing ? (
+              <div style={{ marginTop: '15px' }}>
+                <textarea
+                  value={draftBio}
+                  onChange={(e) => setDraftBio(e.target.value)}
+                  maxLength={160}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
+                  placeholder="Write a litte about yourself..."
+                />
+                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                  {/* Here is where handleSaveBio is used */}
+                  <button onClick={handleSaveBio} style={{ padding: '6px 15px', backgroundColor: '#1DA1F2', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                  <button onClick={() => setIsEditing(false)} style={{ padding: '6px 15px', backgroundColor: '#eee', color: '#333', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              profileInfo.bio && <p style={{ marginTop: '15px', lineHeight: '1.5' }}>{profileInfo.bio}</p>
+            )}
 
             <p style={{ fontSize: '12px', color: 'gray', marginTop: '15px' }}>
               Joined {new Date(profileInfo.created_at).toLocaleDateString()}
