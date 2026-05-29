@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { auth } from "./firebase";
+import { Link } from "react-router-dom";
 
 export default function Feed() {
   const [tweets, setTweets] = useState<any[]>([]);
@@ -115,7 +116,12 @@ export default function Feed() {
       {!loading && tweets.map((tweet) => (
         <div key={tweet.tweet_id} style={{ padding: "15px 20px", borderBottom: "1px solid #eee" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px"}}>
-            <strong style={{ fontSize: "16px"}}>{tweet.author_screen_name}</strong>
+            <Link
+              to={`/user/${tweet.author_id}`}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <strong style={{ fontSize: "16px"}}>{tweet.author_screen_name}</strong>
+            </Link>
             <span style={{ fontSize: "12px", color: "gray" }}>
               {new Date(tweet.created_at).toLocaleString()}
             </span>

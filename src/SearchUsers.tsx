@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { User } from "firebase/auth";
+import { Link } from "react-router-dom";
+
 
 interface SearchUserProps {
   currentUser: User;
@@ -79,7 +81,13 @@ export default function SearchUsers({ currentUser }: SearchUserProps) {
           {results.map((user) => (
             <li key={user.user_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #eee" }}>
               <div>
-                <strong>{user.name}</strong> <br/>
+                <Link
+                  to={`/user/${user.user_id}`}
+                  style={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <strong>{user.name}</strong> 
+                </Link>
+                <br/>
                 <span style={{ color: "gray", fontSize: "14px" }}>@{user.screen_name}</span>
               </div>
               <button
