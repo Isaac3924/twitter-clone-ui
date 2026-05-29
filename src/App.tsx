@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from './Login';
 import Dashboard from "./Dashboard";
+import Profile from "./Profile";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -39,10 +40,7 @@ export default function App() {
         <Route 
           path="/user/:username"
           element={
-            <div style={{ padding: '50px', textAlign: 'center' }}>
-              <h2>Profile Page Coming Soon...</h2>
-              <a href="/">Go back to Home</a>
-            </div>
+            <Profile />
           }
         />
 
