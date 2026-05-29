@@ -144,6 +144,12 @@ export default function Profile() {
             <p style={{ fontSize: '12px', color: 'gray', marginTop: '15px' }}>
               Joined {new Date(profileInfo.created_at).toLocaleDateString()}
             </p>
+
+            {/* Follower Stats */}
+            <div style={{ display: 'flex', gap: '20px', marginTop: '15px', fontSize: '15px' }}>
+              <span><strong>{profileInfo.following_count || 0}</strong> <span style={{ color: 'gray' }}>Following</span></span>
+              <span><strong>{profileInfo.followers_count || 0}</strong> <span style={{ color: 'gray' }}>Followers</span></span>
+            </div>
           </div>
 
           {/* User's Tweets. Feed */}
