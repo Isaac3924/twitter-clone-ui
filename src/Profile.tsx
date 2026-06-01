@@ -12,9 +12,34 @@ export default function Profile() {
   const [error, setError] = useState<any>("");
   const [isEditing, setIsEditing] = useState(false);
   const [draftBio, setDraftBio] = useState("");
+  const [isFollowing, setIsFollowing] = useState(false);
 
 
   useEffect(() => {
+    const checkFollowStatus = async () => {
+      const user = auth.currentUser;
+      //Don't check if no one is logged in, or if you're looking at your own profile.
+      if (!user || user.uid === username) return;
+
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+        const token = await user.getIdToken();
+
+        const response = await fetch(`${API_URL}/api/v1/users/${username}/is_following`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsFollowing(data.following);
+        }
+      } catch (err) {
+        console.error("Failed to check follow status", err);
+      }
+    };
+
     const fetchProfileData = async () => {
       setLoading(true);
       setError("");
@@ -47,6 +72,8 @@ export default function Profile() {
     if (username) {
       fetchProfileData();
     }
+
+    checkFollowStatus();
   }, [username]);
 
   const handleSaveBio = async () => {
@@ -83,6 +110,41 @@ export default function Profile() {
     }
   }
 
+  const handleFollowToggle = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("You must be logged in to followe users.")
+
+        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+        const token = await user.getIdToken();
+
+        //If already following, set it to DELETE. If not, set it to POST.
+        const method = isFollowing ? "DELETE" : "POST";
+
+        const response = await fetch(`${API_URL}/api/v1/users/${username}/follow`, {
+          method: method,
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) throw new Error("Failed to update follow status.");
+
+        //Flip the button state visually
+        setIsFollowing(!isFollowing);
+
+        //Optimisitcally update the stat on the screen
+        setProfileInfo({
+          ...profileInfo,
+          followers_count: isFollowing
+            ? profileInfo.followers_count - 1
+            : profileInfo.followers_count + 1
+        });
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div style={{maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
 
@@ -107,18 +169,41 @@ export default function Profile() {
                 <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
               </div>
 
-              {/* If the current user owns this profile, show the Edit button */}
-              {auth.currentUser?.uid === username && !isEditing && (
+              {/* Conditional Buttons: Edit vs Follow */}
+              {auth.currentUser?.uid === username && !isEditing ? (
                 <button
                   onClick={() => {
                     setDraftBio(profileInfo.bio || "");
                     setIsEditing(true);
                   }}
-                  style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #1DA1F2', backgroundColor: 'white', color: '#1DA1F2', fontWeight: 'bold', cursor: 'pointer' }}
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '20px', 
+                    border: '1px solid #1DA1F2', 
+                    backgroundColor: 'white', 
+                    color: '#1DA1F2', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer' }}
                 >
                   Edit Profile
                 </button>
-              )}
+              ) : auth.currentUser?.uid !== username ? (
+                <button
+                  onClick={handleFollowToggle}
+                  style={{ 
+                    padding: '8px 16px', 
+                    borderRadius: '20px', 
+                    border: '1px solid', 
+                    borderColor: isFollowing ? '#ccc' : '#1DA1F2',
+                    backgroundColor: isFollowing ? 'white' : '#1DA1F2', 
+                    color: isFollowing ? 'black' : 'white', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer' }}
+                >
+                  {isFollowing ? "Unfollow" : "Follow"}
+                </button>
+              ) : null
+            }
             </div>
 
             {/* The Bio Section: Swaps between text & an input box */}
