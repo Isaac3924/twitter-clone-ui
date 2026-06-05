@@ -1,6 +1,6 @@
 # Twitter Clone UI 🎨
 
-A modern, responsive single-page application (SPA) built to serve as the user interface for the Twitter Clone ecosystemn. This frontend securely communicates with the [Twitter Clone API](https://github.com/Isaac3924/twitter_clone) to deliver a real-time, personalized social media feed.
+A modern, responsive single-page application (SPA) built to serve as the user interface for the Twitter Clone ecosystem. This frontend securely communicates with the [Twitter Clone API](https://github.com/Isaac3924/twitter_clone) to deliver a real-time, personalized social media feed.
 
 ## 🛠 Tech Stack
 * **Framework:** React 18
@@ -8,6 +8,7 @@ A modern, responsive single-page application (SPA) built to serve as the user in
 * **Language:** TypeScript
 * **Authentication:** Google Firebase Auth
 * **Deployment:** Firebase Hosting (via GitHub Actions)
+* **Routing:** react-router-dom for dynamic profile rendering.
 
 ## 🚀 Local Development Setup
 
@@ -38,3 +39,12 @@ npm run dev
 The application will launch at `http://localhost:5173`.
 
 *Important:* For full functionality (posting tweets, loading feeds), ensure the backend FastAPI server is concurrently running on `http://127.0.0.1:8000`.
+
+## ✨ Key Technical Achievements
+* **Optimistic UI:** Engineered state-driven UI updates for follower counts and follow buttons, allowing instant visual feedback without waiting for server refresh.
+* **Strict Typing:** Leveraged TypeScript interfaces to strictly define database tuples and API payloads, preventing runtime data-shape errors.
+
+## 🗺️ Future Roadmap
+**V1.1 - Engagement UI:** Introduce real-time visual state toggles for Liking and Retweeting tweets directly from the feed.
+**V2.0 - Rich Media:** Expand the `ComposeTweet` component to handle file attachments and preview rendering for image and video uploads.
+**V3.0 - Smart Features:**  Implement an AI-driven UI compnent to summarize long threads or suggest context-aware tweet replies.
