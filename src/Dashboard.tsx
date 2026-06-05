@@ -3,6 +3,7 @@ import { signOut, type User } from 'firebase/auth';
 import ComposeTweet from './ComposeTweet';
 import Feed from './Feed';
 import SearchUsers from './SearchUsers';
+import { Link } from 'react-router-dom';
 
 interface DashboardProps {
   user: User;
@@ -11,7 +12,7 @@ interface DashboardProps {
 export default function Dashboard({ user }: DashboardProps) {
   return (
     // APP CONTAINER: Locked to monitor height, body scrolling disabled 
-    <div style={{ display: 'flex', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflow: 'hidden', fontFamily: 'sans-serif' }}>
+    <div className="dashboard-container" style={{ display: 'flex', maxWidth: '1200px', margin: '0 auto', height: '100vh', overflow: 'hidden', fontFamily: 'sans-serif' }}>
       {/* LEFT SIDEBAR: Independent vertical scroll, no sticky needed */}
       <div style={{ 
         width: '250px', 
@@ -24,9 +25,13 @@ export default function Dashboard({ user }: DashboardProps) {
         <h2 style={{ color: '#1DA1F2', margin: '0 0 20px 0' }}>TwitterClone</h2>
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '18px', fontWeight: 'bold' }}>
-          <a href="#" style={{ textDecoration: 'none', color: '#1DA1F2' }}>🏠 Home</a>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>👤 Profile</a>
-          <a href="#" style={{ textDecoration: 'none', color: '#333' }}>⚙️ Settings</a>
+          <Link to="/" style={{ textDecoration: 'none', color: '#1DA1F2' }}>🏠 Home</Link>
+          <Link to ={`/user/${user.uid}`} style={{ textDecoration: 'none', color: '#333' }}>👤 Profile</Link>
+          <div 
+            onClick={() => alert("Settings panel comin in v2.0")}
+            style={{ textDecoration: 'none', color: '#333' }}
+          >
+              ⚙️ Settings</div>
         </nav>
 
         <div style={{ marginTop: 'auto', marginBottom: '20px' }}>

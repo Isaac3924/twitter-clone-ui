@@ -1,0 +1,36 @@
+/* Ensure the body takes up the full screen and has no default margins */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: white;
+}
+
+/* Mobile Responsiveness Rultes */
+@media (max-width: 768px ) {
+  /* Forces the main dashbaord container to stak vertically instead of horizontally */
+  .dashboard-container {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Target the Left Sidebar and make it full width */
+  .dashboard-container > div:nth-child(1) {
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid #eee !important;
+  }
+
+  /* Make the nav links sit horizontally on mobile to save vertical space */
+  .dashboard-container > div:nth-child(1) nav {
+    flex-direction: row !important;
+    justify-content: space-around !important;
+  }
+
+  /* Target the Main Feed area and make it full width */
+  .dashboard-container > div:nth-child(2) {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+}
