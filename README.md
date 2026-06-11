@@ -42,7 +42,7 @@ The application will launch at `http://localhost:5173`.
 
 ## ✨ Key Technical Achievements
 * **Optimistic UI:** Engineered state-driven UI updates for follower counts and follow buttons, allowing instant visual feedback without waiting for server refresh.
-* **Strict Typing:** Leveraged TypeScript interfaces to strictly define database tuples and API payloads, preventing runtime data-shape errors.
+* **Strict Typing:** Leveraged TypeScript interfaces to strictly define database tuples and API payloads, preventing runtime data-shape errors. 
 
 ## 🗺️ Future Roadmap
 **V1.1 - Engagement UI:** Introduce real-time visual state toggles for Liking and Retweeting tweets directly from the feed.
