@@ -21,7 +21,6 @@ export default function Feed() {
 
       try {
         const user = auth.currentUser;
-        if (!user) throw new Error("You must be logged in to view the feed.");
 
         const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -33,6 +32,7 @@ export default function Feed() {
           //The Explore Feed (Global, no auth required by the Python backend)
           endpoint = `${API_URL}/api/v1/tweets/explore`
         } else {
+          if (!user) throw new Error("You must be logged in to view the feed.");
           //The Personal Feed (Requires auth token to verify identity)
           const token = await user.getIdToken();
           endpoint = `${API_URL}/api/v1/users/${user.uid}/feed`;
@@ -62,6 +62,59 @@ export default function Feed() {
 
     fetchFeed();
   }, [isExplore]); //This is the reactor. It re-runs the fetch whenever isExplore changes
+
+  // --- LIKE OPTIMISTIC UI FUNCTION ---
+  const handleLikeToggle = async (tweetId: number, currentlyLiked: boolean) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to like a tweet!");
+      return;
+    }
+
+    // 1. Instantly update the UI (Optimistic Update)
+    setTweets((currentTweets) =>
+      currentTweets.map((tweet) => {
+        if (tweet.tweet_id === tweetId) {
+          return {
+            ...tweet,
+            user_has_liked: !currentlyLiked,
+            like_count: currentlyLiked ? Math.max(0, tweet.like_count - 1): (tweet.like_count || 0) + 1,
+          };
+        }
+        return tweet;
+      })
+    );
+
+    // 2. Send the request to the backend in the backgorund
+    try {
+      const token = await user.getIdToken();
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+      const method = currentlyLiked ? "DELETE" : "POST";
+
+      const response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/like`, {
+        method: method,
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Like operation failed on server");
+
+    } catch (err) {
+      console.error(err);
+      // 3. Rollback the UI if the server request failed
+      setTweets((currentTweets) => 
+        currentTweets.map((tweet) => {
+          if (tweet.tweet_id === tweetId) {
+            return {
+              ...tweet,
+              user_has_liked: currentlyLiked, //Revert back to original state
+              like_count: currentlyLiked ? tweet.like_count + 1 : Math.max(0, tweet.like_count - 1),
+            };
+          }
+          return tweet;
+        })
+      );
+    }
+  };
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -127,6 +180,31 @@ export default function Feed() {
             </span>
           </div>
           <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4" }}>{tweet.body}</p>
+
+          {/* THE LIKE BUTTON UI */}
+          <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
+            <button
+              onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: tweet.user_has_liked ? "red" : "gray",
+                fontSize: "16px",
+                padding: "5px",
+                transition: "transform 0.1s ease-in-out"
+              }}
+              onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+              onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+            >
+              {tweet.user_has_liked ? "❤️" : "♡"}
+            </button>
+            <span style={{ fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
+              {tweet.like_count || 0}
+            </span>
+          </div>
+          
         </div>
       ))}
     </div>
