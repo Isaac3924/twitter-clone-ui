@@ -21,30 +21,28 @@ export default function Feed() {
 
       try {
         const user = auth.currentUser;
-
         const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
         //Dynamic Routing: Decide which endpoint to hit based on the toggle
         let endpoint = "";
-        let requestOptions: RequestInit = { method: "GET" };
+        let requestOptions: RequestInit = { method: "Get", headers: {} };
 
+        //1. If a user is logged in, ALWAYS grab their token and attach it to the headers.
+        //This ensures the backend knows who they are, even on the public Explore tab.
+        if (user) {
+          const token = await user.getIdToken();
+          requestOptions.headers = { "Authorization": `Bearer ${token}`};
+        }
+
+        //2. Set the routing logic
         if (isExplore) {
-          //The Explore Feed (Global, no auth required by the Python backend)
           endpoint = `${API_URL}/api/v1/tweets/explore`
         } else {
           if (!user) throw new Error("You must be logged in to view the feed.");
-          //The Personal Feed (Requires auth token to verify identity)
-          const token = await user.getIdToken();
           endpoint = `${API_URL}/api/v1/users/${user.uid}/feed`;
-          requestOptions = {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          };
         }
 
-        // Execute the fetch using the dynamically built URL and options
+        //3. Execute the fetch using the dynamically built URL and headers
         const response = await fetch(endpoint, requestOptions);
 
         if (!response.ok) {
@@ -204,7 +202,7 @@ export default function Feed() {
               {tweet.like_count || 0}
             </span>
           </div>
-          
+
         </div>
       ))}
     </div>

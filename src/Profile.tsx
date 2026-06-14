@@ -14,6 +14,10 @@ export default function Profile() {
   const [draftBio, setDraftBio] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
 
+  const user = auth.currentUser;
+  const isGuest = !user
+  const isOwner = user?.uid === username;
+  const isLoggedInVisitor = user && !isOwner;
 
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -47,11 +51,18 @@ export default function Profile() {
       try {
         const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+        //Prepare headers dynamically based on Guest vs Logged-In
+        let headers = {};
+        if (user) {
+          const token = await user.getIdToken();
+          headers = { "Authorization": `Bearer ${token}` };
+        }
+
         //Run BOTH backend calls at the exact same time using Promise.all
         //It will make the page load twice as fast.
         const [profileRes, tweetsRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/users/${username}`),
-          fetch(`${API_URL}/api/v1/users/${username}/tweets`)
+          fetch(`${API_URL}/api/v1/users/${username}`, { headers }),
+          fetch(`${API_URL}/api/v1/users/${username}/tweets`, { headers })
         ]);
 
         if (!profileRes.ok) throw new Error("Could not load user profile");
@@ -145,6 +156,57 @@ export default function Profile() {
     }
   };
 
+  const handleLikeToggle = async (tweetId: number, currentlyLiked: boolean) => {
+    if (isGuest) {
+      alert("Please log in or sign up to llike tweets!");
+      return;
+    }
+
+    //1. Optomistic UI update
+    setUserTweets((currentTweets) => 
+      currentTweets.map((tweet) => {
+        if (tweet.tweet_id === tweetId) {
+          return {
+            ...tweet,
+            user_has_liked: !currentlyLiked,
+            like_count: currentlyLiked ? Math.max(0, tweet.like_count -1) : (tweet.like_count || 0) + 1,
+          };
+        }
+        return tweet;
+      })
+    );
+
+    //2. Network Request
+    try {
+      const token = await user.getIdToken();
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+      const method = currentlyLiked ? "DELETE" : "POST";
+
+      const response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/like`, {
+        method: method,
+        headers: { "Authorization": `Bearer ${token}`},
+      });
+
+      if (!response.ok) throw new Error("Like operation failed");
+
+    } catch (err) {
+      console.error(err);
+      //3. Rollback on failure
+      setUserTweets((currentTweets) => 
+        currentTweets.map((tweet) => {
+          if (tweet.tweet_id === tweetId) {
+            return {
+              ...tweet,
+              user_has_liked: currentlyLiked,
+              like_count: currentlyLiked ? tweet.like_count + 1 : Math.max(0, tweet.like_count - 1),
+            };
+          }
+          return tweet;
+        })
+      );
+    }
+  };
+
   return (
     <div style={{maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
 
@@ -170,7 +232,7 @@ export default function Profile() {
               </div>
 
               {/* Conditional Buttons: Edit vs Follow */}
-              {auth.currentUser?.uid === username && !isEditing ? (
+              {isOwner && !isEditing && (
                 <button
                   onClick={() => {
                     setDraftBio(profileInfo.bio || "");
@@ -187,7 +249,9 @@ export default function Profile() {
                 >
                   Edit Profile
                 </button>
-              ) : auth.currentUser?.uid !== username ? (
+              )}
+              
+              {isLoggedInVisitor && (
                 <button
                   onClick={handleFollowToggle}
                   style={{ 
@@ -202,8 +266,7 @@ export default function Profile() {
                 >
                   {isFollowing ? "Unfollow" : "Follow"}
                 </button>
-              ) : null
-            }
+              )}
             </div>
 
             {/* The Bio Section: Swaps between text & an input box */}
@@ -255,6 +318,19 @@ export default function Profile() {
                     </span>
                   </div>
                   <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4" }}>{tweet.body}</p>
+
+                  {/* The Like Button */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <button
+                      onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: tweet.user_has_liked ? "red" : "gray", fontSize: "16px", padding: "5px" }}
+                    >
+                      {tweet.user_has_liked ? "❤️" : "♡" }
+                    </button>
+                    <span style={{fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
+                      {tweet.like_count || 0}
+                    </span>
+                  </div>
                 </div>
               ))
             )}
