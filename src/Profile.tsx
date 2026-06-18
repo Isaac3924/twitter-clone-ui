@@ -19,6 +19,43 @@ export default function Profile() {
   const isOwner = user?.uid === username;
   const isLoggedInVisitor = user && !isOwner;
 
+  //Lifted Fetch Function
+  const fetchProfileData = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+      //Prepare headers dynamically based on Guest vs Logged-In
+      let headers = {};
+      if (user) {
+        const token = await user.getIdToken();
+        headers = { "Authorization": `Bearer ${token}` };
+      }
+
+      //Run BOTH backend calls at the exact same time using Promise.all
+      //It will make the page load twice as fast.
+      const [profileRes, tweetsRes] = await Promise.all([
+        fetch(`${API_URL}/api/v1/users/${username}`, { headers }),
+        fetch(`${API_URL}/api/v1/users/${username}/tweets`, { headers })
+      ]);
+
+      if (!profileRes.ok) throw new Error("Could not load user profile");
+      if (!tweetsRes.ok) throw new Error("Could not load user tweets");
+
+      const profileData = await profileRes.json()
+      const tweetsData = await tweetsRes.json()
+
+      setProfileInfo(profileData);
+      setUserTweets(tweetsData.tweets || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const checkFollowStatus = async () => {
       const user = auth.currentUser;
@@ -41,42 +78,6 @@ export default function Profile() {
         }
       } catch (err) {
         console.error("Failed to check follow status", err);
-      }
-    };
-
-    const fetchProfileData = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-
-        //Prepare headers dynamically based on Guest vs Logged-In
-        let headers = {};
-        if (user) {
-          const token = await user.getIdToken();
-          headers = { "Authorization": `Bearer ${token}` };
-        }
-
-        //Run BOTH backend calls at the exact same time using Promise.all
-        //It will make the page load twice as fast.
-        const [profileRes, tweetsRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/users/${username}`, { headers }),
-          fetch(`${API_URL}/api/v1/users/${username}/tweets`, { headers })
-        ]);
-
-        if (!profileRes.ok) throw new Error("Could not load user profile");
-        if (!tweetsRes.ok) throw new Error("Could not load user tweets");
-
-        const profileData = await profileRes.json()
-        const tweetsData = await tweetsRes.json()
-
-        setProfileInfo(profileData);
-        setUserTweets(tweetsData.tweets || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -207,6 +208,47 @@ export default function Profile() {
     }
   };
 
+  const handleRetweet = async (tweetId: number) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to retweet!");
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
+      let response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/retweet`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`},
+      });
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          const wantsToUnretweet = window.confirm("You already retweeted this. Do you want to undo your retweet?");
+          if (wantsToUnretweet) {
+            response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/retweet`, {
+              method: "DELETE",
+              headers: { "Authorization": `Bearer ${token}`},
+            });
+            if (!response.ok) throw new Error("Failed to remove retweet.");
+          } else {
+            return;
+          }
+        } else {
+          throw new Error("Retweet operation failed on server.")
+        }
+      }
+
+      //Automatically re-fetches the profile feed
+      fetchProfileData();
+
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div style={{maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
 
@@ -310,26 +352,67 @@ export default function Profile() {
               <p style={{ color: 'gray', marginTop: '20px' }}>This user hasn't tweeted anything yet.</p>
             ) : (
               userTweets.map((tweet) => (
-                <div key={tweet.tweet_id} style={{ padding: "15px 0", borderBottom: "1px solid #eee" }}>
+                //Use feed_id as the key to prevent duplicates crashing Reaact
+                <div key={tweet.feed_id} style={{ padding: "15px 0", borderBottom: "1px solid #eee" }}>
+
+                  {/* THE RETWEET HEADER */}
+                  {tweet.is_retweet && (
+                    <div style={{ fontSize: "13px", color: "gray", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span>🔁</span> {tweet.retweeter_name} Retweeted
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <strong style={{ fontSize: "16px" }}>{tweet.author_screen_name}</strong>
+                    <Link
+                      to={`/user/${tweet.author_id}`}
+                      style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                      <strong style={{ fontSize: "16px" }}>{tweet.author_screen_name}</strong>
+                    </Link>
                     <span style={{ fontSize: "12px", color: "gray"}}>
                       {new Date(tweet.created_at).toLocaleString()}
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4" }}>{tweet.body}</p>
+                  <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4", marginBottom: "12px" }}>{tweet.body}</p>
 
-                  {/* The Like Button */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  {/* The Action Buttons */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
+
+                    {/* The Like Button */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <button
+                        onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
+                        style={{ 
+                          background: "none", border: "none", cursor: "pointer", 
+                          color: tweet.user_has_liked ? "red" : "gray", fontSize: "16px", padding: "5px",
+                          transition: "transform 0.1s ease-in-out"
+                        }}
+                        onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+                        onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                      >
+                        {tweet.user_has_liked ? "❤️" : "♡" }
+                      </button>
+                      <span style={{fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
+                        {tweet.like_count || 0}
+                      </span>
+                    </div>
+
+                    {/* The Retweet Button */}
                     <button
-                      onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: tweet.user_has_liked ? "red" : "gray", fontSize: "16px", padding: "5px" }}
+                      onClick={() => handleRetweet(tweet.tweet_id)}
+                      style={{ 
+                        background: "none", border: "none", cursor: "pointer", 
+                        color: "gray", fontSize: "16px", padding: "5px",
+                        transition: "transform 0.1s ease-in-out"
+                      }}
+                      onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+                      onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                      title="Retweet"
                     >
-                      {tweet.user_has_liked ? "❤️" : "♡" }
+                      🔁
                     </button>
-                    <span style={{fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
-                      {tweet.like_count || 0}
-                    </span>
                   </div>
                 </div>
               ))

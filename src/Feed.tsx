@@ -10,10 +10,7 @@ export default function Feed() {
   //This controls which feed we are viewing
   const [isExplore, setIsExplore] = useState(false);
 
-
-  //useEffect runs automatically when this component first loads
-  useEffect(() => {
-    const fetchFeed = async () => {
+  const fetchFeed = async () => {
       //Wipe the current tweets and show loading state when switching tabs
       setLoading(true);
       setError("");
@@ -58,6 +55,8 @@ export default function Feed() {
       }
     };
 
+  //useEffect runs automatically when this component first loads
+  useEffect(() => {
     fetchFeed();
   }, [isExplore]); //This is the reactor. It re-runs the fetch whenever isExplore changes
 
@@ -114,6 +113,52 @@ export default function Feed() {
     }
   };
 
+  // --- RETWEET FUNCTION ---
+  const handleRetweet = async (tweetId: number) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to retweet!");
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+
+      //Try to POST the retweet
+      let response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/retweet`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      
+      //If it fails b/c it already exists, ask the user if they want to UN-retweet 
+      if (!response.ok) {
+        if (response.status === 400) {
+          const wantsToUnretweet = window.confirm("You already retweeted this. Do you want to undo your retweet?");
+          if (wantsToUnretweet) {
+            response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/retweet`, {
+              method: "DELETE",
+              headers: { "Authorization": `Bearer ${token}` },
+            });
+            if (!response.ok) throw new Error("Failed to remove retweet.");
+          } else {
+            return; //User cancelled the un-retweet
+          }
+        } else {
+          throw new Error("Retweet operation failed on server");
+        }
+      }
+
+      //If it gets here, the POST or DELETE succeeded.
+      //Instead of manual F5, just trigger a state update to reload the feed.
+      //Since the logic is already in the function called fetchFeed, call it here
+      fetchFeed();
+
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }
+
   return (
     <div style={{ marginTop: "20px" }}>
       
@@ -165,7 +210,15 @@ export default function Feed() {
       )}
 
       {!loading && tweets.map((tweet) => (
-        <div key={tweet.tweet_id} style={{ padding: "15px 20px", borderBottom: "1px solid #eee" }}>
+        <div key={tweet.feed_id} style={{ padding: "15px 20px", borderBottom: "1px solid #eee" }}>
+
+          {/* THE RETWEET HEADER */}
+          {tweet.is_retweet && (
+            <div style={{ fontSize: "13px", color: "gray", marginBottom: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+              <span>🔁</span> {tweet.retweeter_name} Retweeted
+            </div>
+          )}
+
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px"}}>
             <Link
               to={`/user/${tweet.author_id}`}
@@ -177,32 +230,54 @@ export default function Feed() {
               {new Date(tweet.created_at).toLocaleString()}
             </span>
           </div>
-          <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4" }}>{tweet.body}</p>
+          <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4", marginBottom: "12px" }}>{tweet.body}</p>
 
-          {/* THE LIKE BUTTON UI */}
-          <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
-            <button
-              onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: tweet.user_has_liked ? "red" : "gray",
-                fontSize: "16px",
-                padding: "5px",
-                transition: "transform 0.1s ease-in-out"
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
-              onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-            >
-              {tweet.user_has_liked ? "❤️" : "♡"}
-            </button>
-            <span style={{ fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
-              {tweet.like_count || 0}
-            </span>
+          {/* THE ACTION BUTTONS */}
+          <div style={{ display: "flex", alignItems: "center", gap: "25px"}}>
+
+            {/* The Like Button */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
+              <button
+                onClick={() => handleLikeToggle(tweet.tweet_id, tweet.user_has_liked)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: tweet.user_has_liked ? "red" : "gray",
+                  fontSize: "16px",
+                  padding: "5px",
+                  transition: "transform 0.1s ease-in-out"
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+                onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              >
+                {tweet.user_has_liked ? "❤️" : "♡"}
+              </button>
+              <span style={{ fontSize: "14px", color: tweet.user_has_liked ? "red" : "gray" }}>
+                {tweet.like_count || 0}
+              </span>
+            </div>
+
+             {/* The Retweet Button */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
+              <button
+                onClick={() => handleRetweet(tweet.tweet_id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "gray", fontSize: "16px", padding: "5px",
+                  transition: "transform 0.1s ease-in-out"
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+                onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                title="Retweet"
+              >
+                🔁
+              </button>
+
+            </div>
           </div>
-
         </div>
       ))}
     </div>
