@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { auth } from './firebase';
+import MediaRenderer from "./MediaRenderer";
+import Lightbox from "./Lightbox";
 
 export default function Profile() {
   // Grab the dynamic param from the URL (definred as :username in App.tsx)
@@ -13,6 +15,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [draftBio, setDraftBio] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
+  const [lightboxImage, setLightBoxImage] = useState<string | null>(null);
 
   const user = auth.currentUser;
   const isGuest = !user
@@ -375,19 +378,12 @@ export default function Profile() {
                   </div>
                   <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4", marginBottom: "12px" }}>{tweet.body}</p>
 
-                  {/* THE MEDIA RENDERER */}
+                  {/* DYNAMIC TIMELINE RENDERER */}
                   {tweet.media_url && (
                     <div style={{ marginBottom: "15px" }}>
-                      <img
-                        src={tweet.media_url}
-                        alt="Tweet Media"
-                        style={{
-                          width: "100%",
-                          maxHeight: "500px",
-                          objectFit: "cover",
-                          borderRadius: "15px",
-                          border: "1px solid #eee"
-                        }}
+                      <MediaRenderer
+                        mediaUrl={tweet.media_url}
+                        onImageClick={(url) => setLightBoxImage(url)}
                       />
                     </div>
                   )}
@@ -433,6 +429,13 @@ export default function Profile() {
                   </div>
                 </div>
               ))
+            )}
+            {/* THE LIGHTBOX OVERLAY */}
+            {lightboxImage && (
+              <Lightbox
+                imageUrl={lightboxImage}
+                onClose={() => setLightBoxImage(null)}
+              />
             )}
           </div>
         </>
