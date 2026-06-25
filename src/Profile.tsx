@@ -375,6 +375,23 @@ export default function Profile() {
                   </div>
                   <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4", marginBottom: "12px" }}>{tweet.body}</p>
 
+                  {/* THE MEDIA RENDERER */}
+                  {tweet.media_url && (
+                    <div style={{ marginBottom: "15px" }}>
+                      <img
+                        src={tweet.media_url}
+                        alt="Tweet Media"
+                        style={{
+                          width: "100%",
+                          maxHeight: "500px",
+                          objectFit: "cover",
+                          borderRadius: "15px",
+                          border: "1px solid #eee"
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* The Action Buttons */}
                   <div style={{ display: "flex", alignItems: "center", gap: "25px" }}>
 
