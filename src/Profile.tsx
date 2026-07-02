@@ -16,6 +16,7 @@ export default function Profile() {
   const [draftBio, setDraftBio] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
   const [lightboxImage, setLightBoxImage] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
   const user = auth.currentUser;
   const isGuest = !user
@@ -91,7 +92,7 @@ export default function Profile() {
     checkFollowStatus();
   }, [username]);
 
-  const handleSaveBio = async () => {
+  const handleSaveProfile = async () => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("You must be logged in to edit your profile.");
@@ -99,26 +100,49 @@ export default function Profile() {
       const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
       const token = await user.getIdToken();
 
-      const response = await fetch(`${API_URL}/api/v1/users/${username}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ bio: draftBio })
-      });
+      let updatedProfile = { ...profileInfo };
 
-      if (!response.ok) {
-        throw new Error("Failed to update bio on the server.");
+      //Update the bio if it changed
+      if (draftBio !== profileInfo.bio) {
+        const bioRes = await fetch(`${API_URL}/api/v1/users/${username}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ bio: draftBio })
+        });
+        if (!bioRes.ok) throw new Error("Failed to update bio.");
+        const bioData = await bioRes.json();
+        updatedProfile.bio = bioData.bio;
       }
 
-      const data = await response.json();
+      //Update the Profile Image if one was selected
+      if (profileImageFile) {
+        const formData = new FormData();
+        formData.append("file", profileImageFile);
 
-      //Update the local UI instantly using the returned bio so refresh isn't needed
-      setProfileInfo({ ...profileInfo, bio: data.bio });
+        const imgRes = await fetch(`${API_URL}/api/v1/users/profile-image`, {
+          method: "PATCH",
+          headers: {
+            "Authorization": `Bearer ${token}`
+            //The browser automatically sers the multipart/form-data boundary headers
+          },
+          body: formData
+        });
+        if (!imgRes.ok) throw new Error("Failed to upload profile image.");
+        const imgData = await imgRes.json();
+        updatedProfile.profile_img_url = imgData.profile_img_url;
+      }
 
-      //Close the edit textbox
+      //Update the local UI instantly
+      setProfileInfo(updatedProfile);
+
+      //Close the modal
       setIsEditing(false);
+
+      //Reset the file input
+      setProfileImageFile(null); 
 
     } catch (err: any) {
       alert(err.message); //A quick native alert just for error handling.
@@ -271,9 +295,24 @@ export default function Profile() {
           {/* User Info Header */}
           <div style={{ borderBottom: '1px solid #eee', paddingBottom: '20px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h1 style={{ margin: '0 0 5px 0' }}>{profileInfo.name}</h1>
-                <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
+
+              {/* THE AVATAR AND NAME BLOCK */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ddd',
+                  backgroundImage: profileInfo.profile_img_url ? `url(${profileInfo.profile_img_url})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  flexShrink: 0
+                }} />
+
+                <div>
+                  <h1 style={{ margin: '0 0 5px 0' }}>{profileInfo.name}</h1>
+                  <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
+                </div>
               </div>
 
               {/* Conditional Buttons: Edit vs Follow */}
@@ -281,6 +320,7 @@ export default function Profile() {
                 <button
                   onClick={() => {
                     setDraftBio(profileInfo.bio || "");
+                    setProfileImageFile(null);
                     setIsEditing(true);
                   }}
                   style={{ 
@@ -317,6 +357,17 @@ export default function Profile() {
             {/* The Bio Section: Swaps between text & an input box */}
             {isEditing ? (
               <div style={{ marginTop: '15px' }}>
+                {/* NEW FILE INPUT */}
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ fontSize: '14px', color: 'gray', display: 'block', marginBottom: '5px' }}>Change Profile Picture (Max 10 MB)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileImageFile(e.target.files ? e.target.files[0] : null)}
+                    style={{ fontSize: '14px' }}
+                  />
+                </div>
+
                 <textarea
                   value={draftBio}
                   onChange={(e) => setDraftBio(e.target.value)}
@@ -325,8 +376,8 @@ export default function Profile() {
                   placeholder="Write a litte about yourself..."
                 />
                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  {/* Here is where handleSaveBio is used */}
-                  <button onClick={handleSaveBio} style={{ padding: '6px 15px', backgroundColor: '#1DA1F2', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                  {/* Here is where handleSaveProfile is used */}
+                  <button onClick={handleSaveProfile} style={{ padding: '6px 15px', backgroundColor: '#1DA1F2', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
                   <button onClick={() => setIsEditing(false)} style={{ padding: '6px 15px', backgroundColor: '#eee', color: '#333', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
                 </div>
               </div>
