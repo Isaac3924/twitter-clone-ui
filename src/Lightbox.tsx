@@ -1,10 +1,12 @@
 interface LightboxProps {
-  imageUrl: string;
+  mediaUrl: string;
   onClose: () => void;
 }
 
-export default function Lightbox({ imageUrl, onClose }: LightboxProps) {
-  if (!imageUrl) return null;
+export default function Lightbox({ mediaUrl, onClose }: LightboxProps) {
+  if (!mediaUrl) return null;
+
+  const isVideo = mediaUrl.toLowerCase().endsWith('.mp4');
 
   return (
     <div
@@ -40,19 +42,36 @@ export default function Lightbox({ imageUrl, onClose }: LightboxProps) {
         X
       </button>
 
-      <img
-        src={imageUrl}
-        alt="Full screen media"
-        onClick={(e) => e.stopPropagation()} //Prevents clicking the image itself from closing the modal
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          objectFit: 'contain',
-          borderRadius: '10px',
-          boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-          cursor: 'default'
-        }}
-      />
+      {isVideo ? (
+        <video
+          src={mediaUrl}
+          controls
+          autoPlay
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            borderRadius: '10px',
+            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+            cursor: 'default',
+            backgroundColor: 'black'
+          }}
+        />
+      ) : (
+        <img
+          src={mediaUrl}
+          alt="Full screen media"
+          onClick={(e) => e.stopPropagation()} //Prevents clicking the image itself from closing the modal
+          style={{
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            objectFit: 'contain',
+            borderRadius: '10px',
+            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+            cursor: 'default'
+          }}
+        />
+      )}
     </div>
   );
 }

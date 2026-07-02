@@ -484,7 +484,7 @@ export default function Profile() {
             {/* THE LIGHTBOX OVERLAY */}
             {lightboxImage && (
               <Lightbox
-                imageUrl={lightboxImage}
+                mediaUrl={lightboxImage}
                 onClose={() => setLightBoxImage(null)}
               />
             )}

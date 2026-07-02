@@ -298,7 +298,7 @@ export default function Feed() {
       {/* THE LIGHTBOX OVERLAY */}
       {lightboxImage && (
         <Lightbox
-          imageUrl={lightboxImage}
+          mediaUrl={lightboxImage}
           onClose={() => setLightBoxImage(null)}
         />
       )}
