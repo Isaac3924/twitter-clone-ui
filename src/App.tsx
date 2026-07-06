@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from './Login';
 import Dashboard from "./Dashboard";
 import Profile from "./Profile";
+import TweetDetail from "./TweetDetail";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -43,6 +44,9 @@ export default function App() {
             <Profile />
           }
         />
+
+        {/* The Dynamic Tweet Detail Page */}
+        <Route path="/tweet/:tweetId" element={<TweetDetail />} />
 
         {/* Catch-All: If a mistyped URL, redirect to Home */}
         <Route path="*" element={<Navigate to="/" replace />} />

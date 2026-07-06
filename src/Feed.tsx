@@ -250,6 +250,27 @@ export default function Feed() {
           {/* THE ACTION BUTTONS */}
           <div style={{ display: "flex", alignItems: "center", gap: "25px"}}>
 
+            {/* The Reply/Comment Button */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
+              <Link
+                to={`/tweet/${tweet.tweet_id}`}
+                style={{
+                  textDecoration: "none",
+                  color: "gray",
+                  fontSize: "16px",
+                  padding: "5px",
+                  display: "inline-block",
+                  transition: "transform 0.1s ease-in-out"
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
+                onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                title="Reply to Tweet"
+              >
+                💬
+              </Link>
+            </div>
+
             {/* The Like Button */}
             <div style={{ display: "flex", alignItems: "center", gap: "5px"}}>
               <button
