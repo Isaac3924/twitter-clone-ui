@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { auth } from './firebase';
+import MediaRenderer from "./MediaRenderer"
+import Lightbox from "./Lightbox";
 
 export default function TweetDetail() {
   //Grab the tweetId from the URL (defined as :tweetId in App.tsx)
@@ -12,6 +14,7 @@ export default function TweetDetail() {
   const [error, setError] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lightBoxImage, setLightBoxImage] = useState<string | null>(null);
 
   const user = auth.currentUser;
   const isGuest = !user;
@@ -110,6 +113,17 @@ export default function TweetDetail() {
         <p style={{ margin: 0, fontSize: "20px", lineHeight: "1.4", marginBottom: "12px "}}>
           {mainTweet.body}
         </p>
+
+        {/* Render Main Tweer Media */}
+        {mainTweet.media_url && (
+          <div style={{ marginBottom: "15px" }}>
+            <MediaRenderer
+              mediaUrl={mainTweet.media_url}
+              onImageClick={(url) => setLightBoxImage(url)}
+            />
+          </div>
+        )}
+
         <span style={{ fontSize: "14px", color: "gray" }}>
           {new Date(mainTweet.created_at).toLocaleString()}
         </span>
@@ -164,10 +178,28 @@ export default function TweetDetail() {
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4" }}>{reply.body}</p>
+
+              {/* Render Reply Media if it  has any */}
+              {reply.media_url && (
+                <div style={{ marginBottom: "10px"}}>
+                  <MediaRenderer
+                    mediaUrl={reply.media_url}
+                    onImageClick={(url) => setLightBoxImage(url)}
+                  />
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
+
+      {/* The Lightbox Overlay */}
+      {lightBoxImage && (
+        <Lightbox
+          mediaUrl={lightBoxImage}
+          onClose={() => setLightBoxImage(null)}
+        />
+      )}
     </div>
   );
 }
