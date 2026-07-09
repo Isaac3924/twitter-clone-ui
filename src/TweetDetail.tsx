@@ -116,10 +116,11 @@ export default function TweetDetail() {
 
         {/* Render Main Tweer Media */}
         {mainTweet.media_url && (
-          <div style={{ marginBottom: "15px" }}>
+          <div style={{ marginBottom: "15px", margin: "0 -20px" }}>
             <MediaRenderer
               mediaUrl={mainTweet.media_url}
               onImageClick={(url) => setLightBoxImage(url)}
+              isDetailView={true}
             />
           </div>
         )}
