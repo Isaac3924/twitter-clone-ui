@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { auth } from './firebase';
 import MediaRenderer from "./MediaRenderer"
@@ -15,6 +15,8 @@ export default function TweetDetail() {
   const [replyBody, setReplyBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lightBoxImage, setLightBoxImage] = useState<string | null>(null);
+  const [media, setMedia] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user = auth.currentUser;
   const isGuest = !user;
@@ -55,8 +57,15 @@ export default function TweetDetail() {
     }
   }, [tweetId]);
 
-  const handleReplySubmit = async () => {
-    if (!replyBody.trim()) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setMedia(e.target.files[0]);
+    }
+  };
+
+  const handleReplySubmit = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
+    if (!replyBody.trim() && !media) return;
     if (isGuest) {
       alert("You msut be logged in to reply!");
       return;
@@ -67,19 +76,25 @@ export default function TweetDetail() {
       const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
       const token = await user.getIdToken();
 
+      //Initialize FormData
+      const formData = new FormData();
+      if (replyBody.trim()) formData.append('body', replyBody);
+      if (media) formData.append('media', media);
+
       const response = await fetch(`${API_URL}/api/v1/tweets/${tweetId}/reply`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ body: replyBody })
+        body: formData
       });
 
       if (!response.ok) throw new Error("Failed to post reply");
 
-      //Clear the text box and instantly refresh the thread to show the new reply
+      //Clear the text box, file input and instantly refresh the thread
       setReplyBody("");
+      setMedia(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       fetchThread();
 
     } catch (err: any) {
@@ -95,6 +110,7 @@ export default function TweetDetail() {
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif'}}>
+
       {/* Top Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
         <Link to="/" style={{ textDecoration: 'none', color: '#1DA1F2', fontWeight: 'bold', marginRight: '20px' }}>
@@ -114,7 +130,7 @@ export default function TweetDetail() {
           {mainTweet.body}
         </p>
 
-        {/* Render Main Tweer Media */}
+        {/* Render Main Tweet Media */}
         {mainTweet.media_url && (
           <div style={{ marginBottom: "15px", margin: "0 -20px" }}>
             <MediaRenderer
@@ -136,30 +152,75 @@ export default function TweetDetail() {
           <p style={{ margin: "0 0 10px 0", color: "gray", fontSize: "14px" }}>
             Replying to <span style={{ color: "#1DA1F2" }}> @{mainTweet.author_screen_name}</span>
           </p>
-          <textarea
-            value={replyBody}
-            onChange={(e) => setReplyBody(e.target.value)}
-            placeholder="Post your reply"
-            maxLength={280}
-            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical', fontSize: '16px' }}
-          />
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
-            <button
-              onClick={handleReplySubmit}
-              disabled={isSubmitting || !replyBody.trim()}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: replyBody.trim() ? '#1DA1F2' : '#8ED0F9',
-                color: 'white',
-                border: 'none',
-                borderRadius: '20px',
-                fontWeight: 'bold',
-                cursor: replyBody.trim() ? 'pointer' : 'default'
-              }}
-            >
-              {isSubmitting ? "Posting..." : "Reply"}
-            </button>
-          </div>
+
+          <form onSubmit={handleReplySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <textarea
+              value={replyBody}
+              onChange={(e) => setReplyBody(e.target.value)}
+              placeholder="Post your reply"
+              maxLength={280}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical', fontSize: '16px' }}
+            />
+
+            {/* Image Preview/File Name Indicator */}
+            {media && (
+              <div style={{ fontSize: '14px', color: '#1DA1f2', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                <span>📷 {media.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {setMedia(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontWeight: 'bold'}}
+                >
+                  X
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                {/* The HTML file input (hidden) */}
+                <input
+                  type="file"
+                  accept="image/jpeg, image/png, image/gif, image/webp, video/mp4"
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+
+                {/* The trigger button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#1DA1F2'}}
+                  title="Add media"
+                >
+                  🖼️
+                </button>
+
+                {/* Character Counter */}
+                <span style={{ fontSize: '14px', color: replyBody.length >= 280 ? '#dc3545' : '#888'}}>
+                  {replyBody.length}/280
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting || (!replyBody.trim() && !media)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: (replyBody.trim() || media) ? '#1DA1F2' : '#8ED0F9',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '20px',
+                  fontWeight: 'bold',
+                  cursor: (replyBody.trim() || media) ? 'pointer' : 'default',
+                  opacity: isSubmitting ? 0.5 : 1
+                }}
+              >
+                {isSubmitting ? "Posting..." : "Reply"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
