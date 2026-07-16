@@ -7,6 +7,7 @@ import Login from './Login';
 import Dashboard from "./Dashboard";
 import Profile from "./Profile";
 import TweetDetail from "./TweetDetail";
+import SearchResults from "./SearchResults";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -47,6 +48,9 @@ export default function App() {
 
         {/* The Dynamic Tweet Detail Page */}
         <Route path="/tweet/:tweetId" element={<TweetDetail />} />
+
+        {/* The Search Results Page */}
+        <Route path="/search" element={<SearchResults />} />
 
         {/* Catch-All: If a mistyped URL, redirect to Home */}
         <Route path="*" element={<Navigate to="/" replace />} />

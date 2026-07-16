@@ -2,7 +2,7 @@ import { auth } from './firebase'
 import { signOut, type User } from 'firebase/auth';
 import ComposeTweet from './ComposeTweet';
 import Feed from './Feed';
-import SearchUsers from './SearchUsers';
+import SearchBar from './SearchBar';
 import { Link } from 'react-router-dom';
 
 interface DashboardProps {
@@ -54,7 +54,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
 
         {/* User Search */}
-        <SearchUsers currentUser={user} />
+        <SearchBar currentUser={user} />
 
         {/* Compose Tweet */}
         <ComposeTweet />
