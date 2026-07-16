@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { auth } from './firebase';
 import MediaRenderer from "./MediaRenderer";
 import Lightbox from "./Lightbox";
+import TweetBody from "./TweetBody";
 
 export default function Profile() {
   // Grab the dynamic param from the URL (definred as :username in App.tsx)
@@ -427,7 +428,7 @@ export default function Profile() {
                       {new Date(tweet.created_at).toLocaleString()}
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.4", marginBottom: "12px" }}>{tweet.body}</p>
+                  <TweetBody text={tweet.body} />
 
                   {/* DYNAMIC TIMELINE RENDERER */}
                   {tweet.media_url && (

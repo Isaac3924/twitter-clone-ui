@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { auth } from './firebase';
 import MediaRenderer from "./MediaRenderer"
 import Lightbox from "./Lightbox";
+import TweetBody from "./TweetBody";
 
 export default function TweetDetail() {
   //Grab the tweetId from the URL (defined as :tweetId in App.tsx)
@@ -126,9 +127,7 @@ export default function TweetDetail() {
             <strong style={{ fontSize: "18px" }}>{mainTweet.author_screen_name}</strong>
           </Link>
         </div>
-        <p style={{ margin: 0, fontSize: "20px", lineHeight: "1.4", marginBottom: "12px "}}>
-          {mainTweet.body}
-        </p>
+        <TweetBody text={mainTweet.body} fontSize="20px" />
 
         {/* Render Main Tweet Media */}
         {mainTweet.media_url && (
