@@ -1,12 +1,7 @@
-import { type User } from 'firebase/auth';
 import ComposeTweet from './ComposeTweet';
 import Feed from './Feed';
 
-interface DashboardProps {
-  user: User;
-}
-
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard() {
   return (
     <>
       {/* Sticky Header */}

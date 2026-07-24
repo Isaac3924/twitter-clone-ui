@@ -38,7 +38,7 @@ export default function App() {
       <Layout user={user}>
         <Routes>
           {/* The Home Page */}
-          <Route path="/" element={<Dashboard user={user} />} />
+          <Route path="/" element={<Dashboard />} />
 
           {/* The Dynamic Profile Page (:username acts as a variable) */}
           <Route path="/user/:username" element={<Profile />} />
