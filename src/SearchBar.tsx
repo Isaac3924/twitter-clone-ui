@@ -89,15 +89,14 @@ export default function SearchBar({ currentUser }: SearchBarProps) {
   };
 
   return (
-    <div style={{ marginBottom: "20px", padding: "15px", border: "1px solid #ccc", borderRadius: "8px" }}>
-      <h3>Search</h3>
+    <div style={{ marginBottom: "20px", position: "relative" }}>
       <input
         type="text"
-        placeholder="Search users or hit Enter for #hashtags..."
+        placeholder="Search TwitterClone..."
         value={query}
         onChange={handleSearch}
         onKeyDown={handleKeyDown}
-        style={{ width: "100%", padding: "10px", marginBottom: "10px", fontSize: "16px", boxSizing: "border-box" }}
+        style={{ width: "100%", padding: "12px 20px", borderRadius: '9999px', border: 'none', backgroundColor: '#e7ecf0', outline: 'none', fontSize: '15px', boxSizing: "border-box" }}
       />
 
       {results.length > 0 && (

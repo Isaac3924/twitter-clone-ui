@@ -8,6 +8,7 @@ import Dashboard from "./Dashboard";
 import Profile from "./Profile";
 import TweetDetail from "./TweetDetail";
 import SearchResults from "./SearchResults";
+import Layout from "./Layout";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -34,27 +35,24 @@ export default function App() {
   //If they are logged in, give access to the Router
   return (
     <BrowserRouter>
-      <Routes>
-        {/* The Home Page */}
-        <Route path="/" element={<Dashboard user={user} />} />
+      <Layout user={user}>
+        <Routes>
+          {/* The Home Page */}
+          <Route path="/" element={<Dashboard user={user} />} />
 
-        {/* The Dynamic Profile Page (:username acts as a variable) */}
-        <Route 
-          path="/user/:username"
-          element={
-            <Profile />
-          }
-        />
+          {/* The Dynamic Profile Page (:username acts as a variable) */}
+          <Route path="/user/:username" element={<Profile />} />
 
-        {/* The Dynamic Tweet Detail Page */}
-        <Route path="/tweet/:tweetId" element={<TweetDetail />} />
+          {/* The Dynamic Tweet Detail Page */}
+          <Route path="/tweet/:tweetId" element={<TweetDetail />} />
 
-        {/* The Search Results Page */}
-        <Route path="/search" element={<SearchResults />} />
+          {/* The Search Results Page */}
+          <Route path="/search" element={<SearchResults />} />
 
-        {/* Catch-All: If a mistyped URL, redirect to Home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch-All: If a mistyped URL, redirect to Home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }
