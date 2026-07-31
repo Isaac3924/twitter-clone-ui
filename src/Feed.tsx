@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { auth } from "./firebase";
 import { Link } from "react-router-dom";
 import MediaRenderer from "./MediaRenderer";
@@ -10,61 +10,106 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // --- Pagination State ---
+  const [nextCursor, setNextCursor] = useState<number | null>(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+
   //This controls which feed we are viewing
   const [isExplore, setIsExplore] = useState(false);
 
   //State to track which image is currently clicked
   const [lightboxImage, setLightBoxImage] = useState<string | null>(null);
 
-  const fetchFeed = async () => {
-      //Wipe the current tweets and show loading state when switching tabs
+  const fetchFeed = async (cursor: number | null = null) => {
+    //If it's a new tab load (no cursor), wipe current tweets and show main loader
+    if (!cursor) {
       setLoading(true);
       setError("");
       setTweets([]);
+    } else {
+      //If it's a pagination load, keep tweets on screen and show subtle loader
+      setIsFetchingMore(true);
+    }
 
-      try {
-        const user = auth.currentUser;
-        const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+    try {
+      const user = auth.currentUser;
+      const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-        //Dynamic Routing: Decide which endpoint to hit based on the toggle
-        let endpoint = "";
-        let requestOptions: RequestInit = { method: "Get", headers: {} };
+      //Dynamic Routing: Decide which endpoint to hit based on the toggle
+      let endpoint = "";
+      let requestOptions: RequestInit = { method: "Get", headers: {} };
 
-        //1. If a user is logged in, ALWAYS grab their token and attach it to the headers.
-        //This ensures the backend knows who they are, even on the public Explore tab.
-        if (user) {
-          const token = await user.getIdToken();
-          requestOptions.headers = { "Authorization": `Bearer ${token}`};
-        }
-
-        //2. Set the routing logic
-        if (isExplore) {
-          endpoint = `${API_URL}/api/v1/tweets/explore`
-        } else {
-          if (!user) throw new Error("You must be logged in to view the feed.");
-          endpoint = `${API_URL}/api/v1/users/${user.uid}/feed`;
-        }
-
-        //3. Execute the fetch using the dynamically built URL and headers
-        const response = await fetch(endpoint, requestOptions);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch feed from server');
-        }
-
-        const data = await response.json();
-        setTweets(data.feed || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      //1. If a user is logged in, ALWAYS grab their token and attach it to the headers.
+      //This ensures the backend knows who they are, even on the public Explore tab.
+      if (user) {
+        const token = await user.getIdToken();
+        requestOptions.headers = { "Authorization": `Bearer ${token}`};
       }
-    };
 
-  //useEffect runs automatically when this component first loads
+      //2. Set the routing logic
+      if (isExplore) {
+        endpoint = `${API_URL}/api/v1/tweets/explore`
+      } else {
+        if (!user) throw new Error("You must be logged in to view the feed.");
+        endpoint = `${API_URL}/api/v1/users/${user.uid}/feed`;
+      }
+
+      //Append cursor to URL if one was passed in
+      if (cursor) {
+        endpoint += `?cursor=${cursor}`;
+      }
+
+      //3. Execute the fetch using the dynamically built URL and headers
+      const response = await fetch(endpoint, requestOptions);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch feed from server');
+      }
+        
+      const data = await response.json();
+
+      if (cursor) {
+        setTweets(prev => [...prev, ...(data.feed || [])]);
+      } else {
+        setTweets(data.feed || []);
+      }
+
+      //Save the next cursor (will be null if we hit the end)
+      setNextCursor(data.next_cursor || null);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setIsFetchingMore(false);
+    }
+  };
+
+  //Re-runs the initial fetch (without cursor) whenever isExplore changes
   useEffect(() => {
-    fetchFeed();
-  }, [isExplore]); //This is the reactor. It re-runs the fetch whenever isExplore changes
+    fetchFeed(null);
+  }, [isExplore]);
+
+  //--- The Intersection Observer ---
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        //If the bottom div is visible, have a cursor, and aren't currently fetching
+        if (entries[0].isIntersecting && nextCursor !== null && !isFetchingMore && !loading) {
+          fetchFeed(nextCursor);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [nextCursor, isFetchingMore, loading, isExplore]);
 
   // --- LIKE OPTIMISTIC UI FUNCTION ---
   const handleLikeToggle = async (tweetId: number, currentlyLiked: boolean) => {
@@ -156,9 +201,8 @@ export default function Feed() {
       }
 
       //If it gets here, the POST or DELETE succeeded.
-      //Instead of manual F5, just trigger a state update to reload the feed.
-      //Since the logic is already in the function called fetchFeed, call it here
-      fetchFeed();
+      //Instead of manual F5, just trigger a fetch from the top (no cursor) to reload the feed.
+      fetchFeed(null);
 
     } catch (err: any) {
       alert(err.message);
@@ -317,6 +361,14 @@ export default function Feed() {
           </div>
         </div>
       ))}
+
+      {/* --- The Observer Target --- */}
+      {/* --- This invisible div sits at the bottom. When it scrolls into view, the observer fires. */}
+      <div ref={loadMoreRef} style={{ height: "20px", margin: "20px 0" }}>
+        {isFetchingMore && <p style={{ textAlign: "center", color: "gray" }}>Loading older tweets...</p>}
+      </div>
+
+
       {/* THE LIGHTBOX OVERLAY */}
       {lightboxImage && (
         <Lightbox
