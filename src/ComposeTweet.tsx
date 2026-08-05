@@ -57,9 +57,6 @@ export default function ComposeTweet() {
       setMedia(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
 
-      //Temporary alert to inform us it worked prior to building the feed
-      alert("Tweet posted successfully!");
-
     } catch (err: any) {
       setError(err.message);
     } finally {
