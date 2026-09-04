@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function SkeletonTweet() {
   return (
     <div style={{ display: 'flex', padding: '20px', borderBottom: '1px solid #eee', gap: '15px'}}>
