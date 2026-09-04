@@ -5,6 +5,26 @@ body {
   background-color: white;
 }
 
+/* --- Skeleton Loader Animation ---*/
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
 /* Mobile Responsiveness Rultes */
 @media (max-width: 768px ) {
   /* Forces the main dashbaord container to stak vertically instead of horizontally */

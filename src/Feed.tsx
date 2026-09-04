@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import MediaRenderer from "./MediaRenderer";
 import Lightbox from "./Lightbox";
 import TweetBody from "./TweetBody";
+import SkeletonTweet from "./SkeletonTweet";
 
 export default function Feed() {
   const [tweets, setTweets] = useState<any[]>([]);
@@ -249,7 +250,13 @@ export default function Feed() {
       </div>
 
       {/* THE FEED CONTENT*/}
-      {loading && <p style={{ textAlign: "center", color: "gray" }}>Loading tweets...</p>}
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {[...Array(5)].map((_, index) => (
+            <SkeletonTweet key={index} />
+          ))}
+        </div>
+      )}
 
       {error && <p style={{ color: "red", textAlign: "center"}}>{error}</p>}
 
