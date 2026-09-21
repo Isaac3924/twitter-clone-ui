@@ -4,6 +4,8 @@ import { auth } from './firebase';
 import MediaRenderer from "./MediaRenderer";
 import Lightbox from "./Lightbox";
 import TweetBody from "./TweetBody";
+import SkeletonProfile from "./SkeletonProfile";
+import SkeletonTweet from "./SkeletonTweet";
 
 export default function Profile() {
   // Grab the dynamic param from the URL (definred as :username in App.tsx)
@@ -288,112 +290,142 @@ export default function Profile() {
         <h2 style={{ margin: 0 }}>Profile</h2>
       </div>
 
-      {loading && <p style={{ textAlign: "center", color: "gray" }}>Loading Profile...</p>}
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <SkeletonProfile />
+          <div style={{ marginTop: '20px' }}>
+            <h3 style={{ borderBottom: '2px solid #1DA1F2', display: 'inline-block', paddingBottom: '5px', marginLeft: '20px'}}>
+              Tweets
+            </h3>
+            {[...Array(3)].map((_, index) => (
+              <SkeletonTweet key={index} />
+            ))}
+          </div>
+        </div>
+      )}
       {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
 
       {!loading && !error && profileInfo && (
         <>
           {/* User Info Header */}
           <div style={{ borderBottom: '1px solid #eee', paddingBottom: '20px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
 
-              {/* THE AVATAR AND NAME BLOCK */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            {/* The Banner (Falls back to standard Twitter gray if no image exists) */}
+            <div style={{
+              width: '100%',
+              height: '200px',
+              backgroundColor: '#cfd9de',
+              /* This is where the banner_img_url will be automatically populated: */
+              backgroundImage: profileInfo.banner_img_url ? `url(${profileInfo.banner_img_url})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}></div>
+
+            <div style={{ padding: '0 20px', position: 'relative' }}>
+
+              {/* Flex container to hold the overlapping Avatar on the left, and buttons on the right */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                
+                {/* The Overlapping Avatar */}
                 <div style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '120px',
+                  height: '120px',
                   borderRadius: '50%',
                   backgroundColor: '#ddd',
                   backgroundImage: profileInfo.profile_img_url ? `url(${profileInfo.profile_img_url})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  border: '4px solid white', /* Creates the cutout effect against the banner */
+                  marginTop: '-60px', /* Pulls the image up over the banner line */
                   flexShrink: 0
                 }} />
 
-                <div>
-                  <h1 style={{ margin: '0 0 5px 0' }}>{profileInfo.name}</h1>
-                  <p style={{ margin: 0, color: 'gray' }}>@{profileInfo.screen_name}</p>
+                {/* The Action Buttons (Moved to the right side, aligned under the banner) */}
+                <div style={{ marginTop: '15px' }}>
+                  {isOwner && !isEditing && (
+                    <button
+                      onClick={() => {
+                        setDraftBio(profileInfo.bio || "");
+                        setProfileImageFile(null);
+                        setIsEditing(true);
+                      }}
+                      style={{ 
+                        padding: '8px 16px', 
+                        borderRadius: '20px', 
+                        border: '1px solid #cfd9de', 
+                        backgroundColor: 'white', 
+                        color: '#0f1419', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer' }}
+                    >
+                      Edit Profile
+                    </button>
+                  )}
+                  
+                  {isLoggedInVisitor && (
+                    <button
+                      onClick={handleFollowToggle}
+                      style={{ 
+                        padding: '8px 16px', 
+                        borderRadius: '20px', 
+                        backgroundColor: isFollowing ? 'white' : '#0f1419', 
+                        color: isFollowing ? 'black' : 'white', 
+                        border: isFollowing ? '1px solid #cfd9de' : 'none',
+                        fontWeight: 'bold', 
+                        cursor: 'pointer' }}
+                    >
+                      {isFollowing ? "Unfollow" : "Follow"}
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Conditional Buttons: Edit vs Follow */}
-              {isOwner && !isEditing && (
-                <button
-                  onClick={() => {
-                    setDraftBio(profileInfo.bio || "");
-                    setProfileImageFile(null);
-                    setIsEditing(true);
-                  }}
-                  style={{ 
-                    padding: '8px 16px', 
-                    borderRadius: '20px', 
-                    border: '1px solid #1DA1F2', 
-                    backgroundColor: 'white', 
-                    color: '#1DA1F2', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer' }}
-                >
-                  Edit Profile
-                </button>
-              )}
-              
-              {isLoggedInVisitor && (
-                <button
-                  onClick={handleFollowToggle}
-                  style={{ 
-                    padding: '8px 16px', 
-                    borderRadius: '20px', 
-                    border: '1px solid', 
-                    borderColor: isFollowing ? '#ccc' : '#1DA1F2',
-                    backgroundColor: isFollowing ? 'white' : '#1DA1F2', 
-                    color: isFollowing ? 'black' : 'white', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer' }}
-                >
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </button>
-              )}
-            </div>
+              {/* Name and Handle (Moved underneath the avatar) */}
+              <div style={{ marginTop: '10px' }}>
+                <h1 style={{ margin: '0 0 2px 0', fontSize: '20px', fontWeight: '900' }}>{profileInfo.name}</h1>
+                <p style={{ margin: 0, color: '#536471', fontSize: '15px' }}>@{profileInfo.screen_name}</p>
+              </div>
+            
+              {/* The Bio Section: Swaps between text & an input box */}
+              {isEditing ? (
+                <div style={{ marginTop: '15px' }}>
+                  {/* NEW FILE INPUT */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ fontSize: '14px', color: 'gray', display: 'block', marginBottom: '5px' }}>Change Profile Picture (Max 10 MB)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProfileImageFile(e.target.files ? e.target.files[0] : null)}
+                      style={{ fontSize: '14px' }}
+                    />
+                  </div>
 
-            {/* The Bio Section: Swaps between text & an input box */}
-            {isEditing ? (
-              <div style={{ marginTop: '15px' }}>
-                {/* NEW FILE INPUT */}
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={{ fontSize: '14px', color: 'gray', display: 'block', marginBottom: '5px' }}>Change Profile Picture (Max 10 MB)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setProfileImageFile(e.target.files ? e.target.files[0] : null)}
-                    style={{ fontSize: '14px' }}
+                  <textarea
+                    value={draftBio}
+                    onChange={(e) => setDraftBio(e.target.value)}
+                    maxLength={160}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
+                    placeholder="Write a litte about yourself..."
                   />
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    {/* Here is where handleSaveProfile is used */}
+                    <button onClick={handleSaveProfile} style={{ padding: '6px 15px', backgroundColor: '#1DA1F2', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                    <button onClick={() => setIsEditing(false)} style={{ padding: '6px 15px', backgroundColor: '#eee', color: '#333', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
+                  </div>
                 </div>
+              ) : (
+                profileInfo.bio && <p style={{ marginTop: '15px', lineHeight: '1.5', fontSize: '15px', color: '#0f1419' }}>{profileInfo.bio}</p>
+              )}
 
-                <textarea
-                  value={draftBio}
-                  onChange={(e) => setDraftBio(e.target.value)}
-                  maxLength={160}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
-                  placeholder="Write a litte about yourself..."
-                />
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  {/* Here is where handleSaveProfile is used */}
-                  <button onClick={handleSaveProfile} style={{ padding: '6px 15px', backgroundColor: '#1DA1F2', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
-                  <button onClick={() => setIsEditing(false)} style={{ padding: '6px 15px', backgroundColor: '#eee', color: '#333', border: 'none', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer' }}>Cancel</button>
-                </div>
+              <p style={{ fontSize: '14px', color: '#536471', marginTop: '15px' }}>
+                Joined {new Date(profileInfo.created_at).toLocaleDateString()}
+              </p>
+
+              {/* Follower Stats */}
+              <div style={{ display: 'flex', gap: '20px', marginTop: '15px', fontSize: '14px' }}>
+                <span><strong style={{ color: '#0f1419' }}>{profileInfo.following_count || 0}</strong> <span style={{ color: '#536471' }}>Following</span></span>
+                <span><strong style={{ color: '#0f1419' }}>{profileInfo.followers_count || 0}</strong> <span style={{ color: '#536471' }}>Followers</span></span>
               </div>
-            ) : (
-              profileInfo.bio && <p style={{ marginTop: '15px', lineHeight: '1.5' }}>{profileInfo.bio}</p>
-            )}
-
-            <p style={{ fontSize: '12px', color: 'gray', marginTop: '15px' }}>
-              Joined {new Date(profileInfo.created_at).toLocaleDateString()}
-            </p>
-
-            {/* Follower Stats */}
-            <div style={{ display: 'flex', gap: '20px', marginTop: '15px', fontSize: '15px' }}>
-              <span><strong>{profileInfo.following_count || 0}</strong> <span style={{ color: 'gray' }}>Following</span></span>
-              <span><strong>{profileInfo.followers_count || 0}</strong> <span style={{ color: 'gray' }}>Followers</span></span>
             </div>
           </div>
 
