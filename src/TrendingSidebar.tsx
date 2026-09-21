@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import SkeletonTrending from "./SkeletonTrending";
 
 //Define the shape of the data expected from the FastAPI endpoint
 interface TrendingTag {
@@ -35,7 +36,26 @@ export default function TrendingSidebar() {
     fetchTrending();
   }, []);
 
-  if (loading) return <div style={{ padding: '20px' }}>Loading trends...</div>;
+  if (loading) {
+    return (
+      <div style={{
+        backgroundColor: '#f7f9f9',
+        borderRadius: '16px',
+        padding: '16px',
+        marginTop: '16px'
+      }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', marginTop: 0}}>
+          What's Happening
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {[...Array(4)].map((_, index) => (
+            <SkeletonTrending key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
   if (error) return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
 
   return (
